@@ -141,10 +141,10 @@ hold off
 % get diameter and plot in original image - TO SHOW THAT DATA IS
 % TRANSFORMED
 
-% diameters = mean([s.MajorAxisLength s.MinorAxisLength], 2);
-% radii = diameters/2;
-% % plot the circles
-% viscircles(centroids,radii);
+diameters = mean([s.MajorAxisLength s.MinorAxisLength], 2);
+radii = diameters/2;
+% plot the circles
+viscircles(centroids,radii);
 
 
 
