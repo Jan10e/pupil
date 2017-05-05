@@ -10,7 +10,7 @@
 % Conic Ellipse representation = a*x^2+b*x*y+c*y^2+d*x+e*y+f=0
 %  (Tilt/orientation for the ellipse occurs when the term x*y exists (i.e. b ~= 0)) 
 %   EDIT: made changes in this function to create plots
-% - ellipse from https://www.mathworks.com/matlabcentral/fileexchange/289-ellipse-m
+% - natsortfiles from http://www.mathworks.com/matlabcentral/fileexchange/47434-natural-order-filename-sort
 
 % Goal
 % (1) Using edge detection, the pupil is found and the coordinates of the
@@ -19,8 +19,8 @@
 % be used to compare the dynamics of the pupil fluctuation.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load data
-cd /home/jantine/newnas/Garrett/'Pupil Videos'/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set/noEllipse
-yourFolder = '/home/jantine/newnas/Garrett/Pupil Videos/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set/noEllipse';
+cd /home/jantine/newnas/Garrett/'Pupil Videos'/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set
+yourFolder = '/home/jantine/newnas/Garrett/Pupil Videos/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set';
 addpath(yourFolder);
 
 filePattern = fullfile(yourFolder, '*.jpeg');
@@ -38,21 +38,25 @@ end
 
   
 %% Edge detection + Ellipse fit
+tic
 contents = dir('*.jpeg') 
-n=numel(contents);
-for k = 1:n
+%n = natsortfiles({contents.name}); % put files in natural order
+%n=numel(contents); 
+[~,ndx] = natsortfiles({contents.name}); % put files in natural order
+contents = contents(ndx);
+for k = 1:numel(n)
   filename(k) = {contents(k).name};
   I = imread(filename{k});
   
   % Creating title for images
-    [pathstr, name, ext] = fileparts(filename{k});
-    ix=strfind(name,'_');
-    t = name(ix(4)+1:end);
-    title(sprintf('file %s', t))
+  [pathstr, name, ext] = fileparts(filename{k});
+  ix=strfind(name,'_');
+  t = name(ix(4)+1:end);
+  %title(sprintf('file %s', t));
   
   % Canny edge detection
   I = rgb2gray(I);
-  BW1 = edge(I, 'Canny'); 
+  BW1 = edge(I, 'Canny');
   figure;
   imshow(BW1)
 
@@ -63,68 +67,48 @@ for k = 1:n
   boundaries = bwboundaries(BW1);
   x = boundaries{1}(:, 2);
   y = boundaries{1}(:, 1);
-  % display original image
-  imshow(I); title(sprintf('Outline over image %s', t)); % Outline over original image
-  % plot boundaries over image
-  hold on;
-  plot(x, y, 'g-', 'LineWidth', 2);
-  hold off
+%   % display original image
+%   imshow(I); title(sprintf('Outline over image %s', t)); % Outline over original image
+%   % plot boundaries over image
+%   hold on;
+%   plot(x, y, 'g-', 'LineWidth', 2);
+%   hold off
   
-  % get centroid, area, axis, etc
-  s = regionprops(BW1, 'Centroid', 'Area', 'Eccentricity', ...
-    'MajorAxisLength', 'MinorAxisLength', 'Orientation');
+  % get centroid
+  s = regionprops(BW1, 'Centroid');
   centroids = cat(1, s.Centroid);
-%   majAxis = cat(1, s.MajorAxisLength);
-%   minAxis = cat(1, s.MinorAxisLength);
-%   area = cat(1, s.Area);
-%   orientation = cat(1,s.Orientation);
+  nCentroids = size(centroids,1);
   
   % if there are more than one centroids (centroids(1,:) is one centroid), this means that it didn't find the
   % pupil. So we need to redefine
-  if centroids(:,1) > 1 
+  if nCentroids > 1 
       centroids = [];
-%       majAxis = [];
-%       minAxis = [];
-%       area = [];
-%       orientation = [];
   
       % get the boundary and outline over original image
       boundaries = bwboundaries(BW1);
       x = boundaries{2}(:, 2);
       y = boundaries{2}(:, 1);
-      % display original image
-      imshow(I); title(sprintf('Outline 2 over image %s', t)); % Outline over original image
-      % plot boundaries over image
-      hold on;
-      plot(x, y, 'g-', 'LineWidth', 2);
-      hold off
+%       % display original image
+%       imshow(I); title(sprintf('Outline 2 over image %s', t)); % Outline over original image
+%       % plot boundaries over image
+%       hold on;
+%       plot(x, y, 'g-', 'LineWidth', 2);
+%       hold off
       
-      % get centroid, area, axis, etc
-      s = regionprops(BW1, 'Centroid', 'Area', 'Eccentricity', ...
-            'MajorAxisLength', 'MinorAxisLength', 'Orientation');
-      centroids = cat(1, s.Centroid);
-      centroids = centroids(2,:);
-%       
-%       majAxis = cat(1, s.MajorAxisLength);
-%       majAxis = majAxis(2,:);
-%       
-%       minAxis = cat(1, s.MinorAxisLength);
-%       minAxis = minAxis(2,:);
-%       
-%       area = cat(1, s.Area);
-%       area = area(2,:);
-%       
-%       orientation = cat(1,s.Orientation);
-%       orientation = orientation(2,:);
+%       % get centroid + NOT NECESSARY AFTER DEBUGGING
+%       s = regionprops(BW1, 'Centroid');
+%       centroids = cat(1, s.Centroid);
+%       centroids = centroids(2,:);
       
   end  
   
-  % plot centroid and boundaries in original image
-  imshow(I); title(sprintf('Boundaries + centroid of image %s', t));
-  hold on
-  plot(x, y, 'g-', 'LineWidth', 1);
-  plot(centroids(:,1), centroids(:,2), 'r*'); 
-  hold off
+%   % plot centroid and boundaries in original image + NOT NECESSARY AFTER
+%   % DEBUGING
+%   imshow(I); title(sprintf('Boundaries + centroid of image %s', t));
+%   hold on
+%   plot(x, y, 'g-', 'LineWidth', 1);
+%   plot(centroids(:,1), centroids(:,2), 'r*'); 
+%   hold off
   
   
   % fit ellipse  
@@ -176,8 +160,23 @@ for k = 1:n
     hold off
     end     
   
-end
+    d1 = diff([new_ver_line(:,1) new_ver_line(:,2)]);
+    minAxis(k) = sum(sqrt(sum(d1.*d1,2)));
+    
+    d2 = diff([new_horz_line(:,1) new_horz_line(:,2)]);
+    majAxis(k) = sum(sqrt(sum(d2.*d2,2)));
+  
 
+end
+toc
+
+filename = filename';
+% [pathstr, name, ext] = fileparts(filename(1,:));
+% iix=strfind(name,'_');
+% %t = name(ix(4)+1:end);
+% abc = cellfun(@(in) in(name(iix(4)+1:end), filename, 'un', 0)
+
+plot(minAxis)
  
 %% Get diameter measurement
 % We can use the MajorAxisLength and MinorAxisLength to compare across the

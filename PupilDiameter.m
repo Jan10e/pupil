@@ -243,3 +243,15 @@ viscircles(centroids,radii);
 %             hold off
 %         end
 
+%       
+%       majAxis = cat(1, s.MajorAxisLength);
+%       majAxis = majAxis(2,:);
+%       
+%       minAxis = cat(1, s.MinorAxisLength);
+%       minAxis = minAxis(2,:);
+%       
+%       area = cat(1, s.Area);
+%       area = area(2,:);
+%       
+%       orientation = cat(1,s.Orientation);
+%       orientation = orientation(2,:);
