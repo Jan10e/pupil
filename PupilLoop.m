@@ -19,9 +19,12 @@
 % be used to compare the dynamics of the pupil fluctuation.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load data
-cd /home/jantine/newnas/Garrett/'Pupil Videos'/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set
-yourFolder = '/home/jantine/newnas/Garrett/Pupil Videos/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set';
+%cd /home/jantine/newnas/Garrett/'Pupil Videos'/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set
+%yourFolder = '/home/jantine/newnas/Garrett/Pupil Videos/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set';
+cd /Volumes/'Seagate Backup Plus Drive'/Pupil_Garrett/set
+yourFolder = '/Volumes/Seagate Backup Plus Drive/Pupil_Garrett/set';
 addpath(yourFolder);
+
 
 filePattern = fullfile(yourFolder, '*.jpeg');
 srcFiles = dir(filePattern)
@@ -40,7 +43,7 @@ end
 %% Edge detection + Ellipse fit
 tic
 contents = dir('*.jpeg') 
-%n = natsortfiles({contents.name}); % put files in natural order
+n = natsortfiles({contents.name}); % put files in natural order
 %n=numel(contents); 
 [~,ndx] = natsortfiles({contents.name}); % put files in natural order
 contents = contents(ndx);
@@ -58,7 +61,7 @@ for k = 1:numel(n)
   I = rgb2gray(I);
   BW1 = edge(I, 'Canny');
   figure;
-  imshow(BW1)
+  %imshow(BW1)
 
   % get rid of small blobs
   BW1 = bwareaopen(BW1, 210);
@@ -123,7 +126,7 @@ for k = 1:numel(n)
      end
      
    % plot ellipse  
-   imshow(I);title(sprintf('Pupil Ellipse, image %s', t));
+   %imshow(I);title(sprintf('Pupil Ellipse, image %s', t));
    hold on
    %pupil outline
     if ~isempty(pupilEllipse)
@@ -171,12 +174,43 @@ end
 toc
 
 filename = filename';
-% [pathstr, name, ext] = fileparts(filename(1,:));
-% iix=strfind(name,'_');
-% %t = name(ix(4)+1:end);
-% abc = cellfun(@(in) in(name(iix(4)+1:end), filename, 'un', 0)
+token = strtok(filename,'.');
+D = regexp(token, '_', 'split');
+D = vertcat(D{:});
+filenr_temp = D(:,5);
+S = sprintf('%s*', filenr_temp{:});
+filenr = sscanf(S, '%f*');
+filenr = num2str(filenr');
 
-plot(minAxis)
+% plot diameter fluctuation
+figure;
+hold on
+subplot(2,1,1);
+plot(minAxis, '-.ob')
+xticks(1:1:numel(filenr));
+set(gca,'XTickLabel',filenr)
+xtickangle(45)
+xlabel('filenr');
+ylabel('length axis (px)');
+legend('minAxis');
+
+subplot(2,1,2);
+plot(majAxis, '-.or')
+xticks(1:1:numel(filenr));
+set(gca,'XTickLabel',filenr)
+xtickangle(45)
+xlabel('filenr');
+ylabel('length axis (px)');
+legend('majAxis');
+hold off
+
+
+
+% collect data
+data = [filenr; minAxis; majAxis];
+data = data';
+
+
  
 %% Get diameter measurement
 % We can use the MajorAxisLength and MinorAxisLength to compare across the
@@ -185,3 +219,5 @@ plot(minAxis)
 % pupil ellipse to compare. 
 
 % and compare area
+
+% collect coefficient of formula to compare
