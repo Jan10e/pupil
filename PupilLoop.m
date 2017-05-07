@@ -60,7 +60,7 @@ for k = 1:numel(n)
   % Canny edge detection
   I = rgb2gray(I);
   BW1 = edge(I, 'Canny');
-  figure;
+  %figure;
   %imshow(BW1)
 
   % get rid of small blobs
@@ -127,7 +127,7 @@ for k = 1:numel(n)
      
    % plot ellipse  
    %imshow(I);title(sprintf('Pupil Ellipse, image %s', t));
-   hold on
+   %hold on
    %pupil outline
     if ~isempty(pupilEllipse)
 %          ellipse(pupilEllipse.b,pupilEllipse.a,pupilEllipse.phi,pupilEllipse.X0_in,pupilEllipse.Y0_in, 'r'); %the X0_in and Y0_in are reversed in Dov's script
@@ -155,9 +155,9 @@ for k = 1:numel(n)
     rotated_ellipse = R * [ellipse_x_r;ellipse_y_r];
     
     % draw
-    plot( new_ver_line(1,:),new_ver_line(2,:),'g' ); %major axis
-    plot( new_horz_line(1,:),new_horz_line(2,:),'g' ); %minor axis
-    plot( rotated_ellipse(1,:),rotated_ellipse(2,:),'r' );
+%     plot( new_ver_line(1,:),new_ver_line(2,:),'g' ); %major axis
+%     plot( new_horz_line(1,:),new_horz_line(2,:),'g' ); %minor axis
+%     plot( rotated_ellipse(1,:),rotated_ellipse(2,:),'r' );
 
     
     hold off
@@ -173,6 +173,7 @@ for k = 1:numel(n)
 end
 toc
 
+% extract filename for x-axis (this was done for debugging)
 filename = filename';
 token = strtok(filename,'.');
 D = regexp(token, '_', 'split');
@@ -180,7 +181,8 @@ D = vertcat(D{:});
 filenr_temp = D(:,5);
 S = sprintf('%s*', filenr_temp{:});
 filenr = sscanf(S, '%f*');
-filenr = num2str(filenr');
+filenr = filenr';
+%filenr = num2str(filenr); % not necessary
 
 % plot diameter fluctuation
 figure;
