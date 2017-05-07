@@ -1,3 +1,5 @@
+** Pupil Diameter Analysis **
+
 This repo contains pupil diameter analysis scripts. The scripts differ depending on data structure. 
 The PupilLoop.m is specifically for JPEG files, created for lab members in the McCormick lab, Yale University.
 
