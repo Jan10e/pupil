@@ -212,15 +212,16 @@ hold off
 
 %% Collect data
 
-% collect data
-data = [filenr; edgeArea; shortAxis; longAxis]; % as the eye and face of the animal is curved, it is better to take the longAxis as
-% a diameter and compare this across time
-data = data';
+% % collect data
+% data = [filenr; edgeArea; shortAxis; longAxis]; % as the eye and face of the animal is curved, it is better to take the longAxis as
+% % a diameter and compare this across time
+% data = data';
 
 % collect data with DataJoint
+tuple.session = 01; % make this in a ui at the start of the script
 tuple.filenr = filenr;
-tuple.edgeArea = edgeArea;
-tuple.shortAxis = shortAxis;
-tuple.longAxis = longAxis;
+tuple.edge_area = edgeArea;
+tuple.short_axis = shortAxis;
+tuple.long_axis = longAxis;
 
 insert(preprocess.PupilJPEG, tuple)
