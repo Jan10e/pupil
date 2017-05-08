@@ -40,6 +40,9 @@ else
 end
 
 
+%% Select ROI: Draw around the eye a square like shape
+
+
   
 %% Edge detection + Ellipse fit
 tic
@@ -191,6 +194,7 @@ xlabel('filenr');
 ylabel('area of edge detection (px)');
 legend('edgeArea');
 
+
 subplot(3,1,2);
 plot(shortAxis, '-.ob')
 xticks(1:1:numel(filenr));
@@ -210,17 +214,21 @@ ylabel('length axis (px)');
 legend('longAxis');
 hold off
 
-%% Collect data
+
 
 % collect data
 data = [filenr; edgeArea; shortAxis; longAxis]; % as the eye and face of the animal is curved, it is better to take the longAxis as
 % a diameter and compare this across time
 data = data';
 
-% collect data with DataJoint
-tuple.filenr = filenr;
-tuple.edgeArea = edgeArea;
-tuple.shortAxis = shortAxis;
-tuple.longAxis = longAxis;
 
-insert(preprocess.PupilJPEG, tuple)
+ 
+%% Get diameter measurement
+% We can use the MajorAxisLength and MinorAxisLength to compare across the
+% pupils to look for changes. As getting the diameter/radii circles
+% transforms your data much. Maybe we need to get more data points of the
+% pupil ellipse to compare. 
+
+% and compare area
+
+% collect coefficient of formula to compare
