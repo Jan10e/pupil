@@ -177,18 +177,16 @@ D = vertcat(D{:});
 
 % session date and number
 session_date_temp = D(:,1);
-session_date = datetime(session_date_temp, 'InputFormat', 'ddMMyy', 'Format', 'yyyy-MM-dd');
+
+E = sprintf('%s*', session_date_temp{:}); 
+session_date = sscanf(E, '%f*'); %as double
+
+%session_date = char(session_date); % as char
 session_date = string(session_date); % as string
-
-% E = sprintf('%s*', session_date_temp{:}); 
-% session_date = sscanf(E, '%f*'); %as double
-% 
-% %session_date = char(session_date); % as char
-
 
 
 % Just creating a column with strings to see whether it works
-%session_date = repmat('010316', numel(session_date_temp), 1);
+session_date = repmat('010316', numel(session_date_temp), 1);
 
 
 
@@ -203,20 +201,29 @@ filenr_temp = D(:,5);
 G = sprintf('%s*', filenr_temp{:}); % change cell to double
 filenr = sscanf(G, '%f*');
 filenr = filenr';
-
-% movie number and frame number
-for m = 1:numel(filenr)
-    G = num2str(filenr(m));
-    movie_number(m) = str2double(G(1));
-    frame_number(m) = str2double(G(2:end));
-end
-
-% extract animal_id column
-animal_id_temp = D(:,2);
-animal_id_temp = animal_id_temp(:,1);
-animal_id_temp = sprintf('%s*', animal_id_temp{:});
-animal_id = regexp(animal_id_temp, '\d*', 'Match');
-animal_id = str2double(animal_id');
+% 
+% % movie number and frame number
+% for m = 1:numel(filenr)
+%     G = num2str(filenr(m));
+%     movie_number(m) = str2double(G(1));
+%     frame_number(m) = str2double(G(2:end));
+% end
+% 
+% % % extract animal_id single
+% % animal_id_temp = D(:,2);
+% % animal_id_temp = animal_id_temp(1,1);
+% % animal_id_temp = sprintf('%s', animal_id_temp{:});
+% % animal_id = regexp(animal_id_temp, '\d*', 'Match');
+% % animal_id = sprintf('%s', animal_id{:});
+% % animal_id =str2num(animal_id);
+% 
+% 
+% % extract animal_id column
+% animal_id_temp = D(:,2);
+% animal_id_temp = animal_id_temp(:,1);
+% animal_id_temp = sprintf('%s*', animal_id_temp{:});
+% animal_id = regexp(animal_id_temp, '\d*', 'Match');
+% animal_id = str2double(animal_id');
 
 
 %% Plot variables
@@ -252,11 +259,11 @@ legend('longAxis');
 hold off
 
 %% Collect data
-% 
-% % collect data
-% data = [filenr; edgeArea; shortAxis; longAxis]; % as the eye and face of the animal is curved, it is better to take the longAxis as
-% % a diameter and compare this across time
-% data = data';
+
+% collect data
+data = [filenr; edgeArea; shortAxis; longAxis]; % as the eye and face of the animal is curved, it is better to take the longAxis as
+% a diameter and compare this across time
+data = data';
 
 % % Error upon analyzing whole dataset
 % Error using vertcat
@@ -266,23 +273,23 @@ hold off
 % data = [filenr; edgeArea; shortAxis; longAxis]; % as the eye and face of the animal is curved, it is better to take the longAxis
 % as
 
-% axis = [shortAxis; longAxis]';
+axis = [shortAxis; longAxis]';
 
-addpath /media/jantine/Data/04_DataJoint/2PE/schemas
-
-% collect data for schema preprocess.EyeROI
-tuple.animal_id = animal_id;
-tuple.session_date = session_date; % should be in string format "2017-05-12"
-tuple.session_number = session_number;
-tuple.movie_number = movie_number';
-tuple.frame_number = frame_number';
-tuple.edge_area = edgeArea';
-tuple.short_axis = shortAxis';
-tuple.long_axis = longAxis';
-
-% order structure as DataJoint keys
-a = preprocess.EyeROI;
-fields = a.header.names;
-tuple = orderfields(tuple, fields);
-
-insert(preprocess.EyeROI, dj.struct.fromFields(tuple))
+% addpath /media/jantine/Data/04_DataJoint/2PE/schemas
+% 
+% % collect data for schema preprocess.EyeROI
+% tuple.animal_id = animal_id;
+% tuple.session_date = session_date; % should be in string format "2017-05-12"
+% tuple.session_number = session_number;
+% tuple.movie_number = movie_number';
+% tuple.frame_number = frame_number';
+% tuple.edge_area = edgeArea';
+% tuple.short_axis = shortAxis';
+% tuple.long_axis = longAxis';
+% 
+% % order structure as DataJoint keys
+% a = preprocess.EyeROI;
+% fields = a.header.names;
+% tuple = orderfields(tuple, fields);
+% 
+% insert(preprocess.EyeROI, dj.struct.fromFields(tuple))
