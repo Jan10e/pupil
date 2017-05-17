@@ -40,13 +40,50 @@ addpath(yourFolder);
 % end
 
 
-  
-%% Edge detection + Ellipse fit
-tic
-contents = dir('*.jpeg') 
+contents = dir('*.jpeg'); 
 n = natsortfiles({contents.name}); % put files in natural order
 [~,ndx] = natsortfiles({contents.name}); % put files in natural order
 contents = contents(ndx);
+
+for j = 1:numel(n)
+  filename(j) = {contents(j).name};
+  I = imread(filename{j});
+  
+end
+
+%% Select eye ROI
+
+picEyeAvg = mean(I,3);
+
+%choose region of interest around eye
+figure
+uiwait(msgbox('Select region of interest -> Right click -> Create Mask '));
+maskEye = roipoly(picEyeAvg./255);
+close all
+
+%% Noise removal for edge detection
+
+threshDark = 25;
+
+figure
+uiwait(msgbox('Choose threshDark value so that most pixels of pupil are showing. Press ESC to progress.'));
+for iTest = 1:15
+    randFrame = ceil(rand*size(filename,2));
+    disp(['random frame #' num2str(randFrame)])
+    
+    randImg = imread(filename{randFrame});
+    randImg = randImg(:,:,1);
+    
+    randImg_threshed = randImg<threshDark;
+    imshow(randImg_threshed.*maskEye)
+    pause
+end
+close all
+
+  
+%% Edge detection + Ellipse fit
+tic
+
 for k = 1:numel(n)
   filename(k) = {contents(k).name};
   I = imread(filename{k});
@@ -72,7 +109,7 @@ for k = 1:numel(n)
     x = boundaries{1}(:, 2);
     y = boundaries{1}(:, 1);
   catch ME
-      error_edge(k) = filename(k);
+      error_edge(k) = filename(k);      
       fprintf('Data not collected and skip to next iteration %s\n', ME.message);
       continue; % skips whole procedure for this file and starts new iteration
   end
@@ -87,7 +124,7 @@ for k = 1:numel(n)
   s = regionprops(BW1, 'Centroid', 'Area');
   centroids = cat(1, s.Centroid);
   nCentroids = size(centroids,1);
-  edgeArea(k) = s.Area;
+  %edgeArea(k) = s.Area;
   
   % if there is more than one centroid (centroids(1,:) is one centroid), this means that it didn't find the
   % pupil. So we need to redefine
@@ -106,10 +143,10 @@ for k = 1:numel(n)
 %       hold off
       
       % get area
-      s = regionprops(BW1, 'Area');
-      edgeArea(k) = s.Area;     
+      s = regionprops(BW1, 'Area');     
   end  
   
+  edgeArea(k) = s.Area;
   
   % fit ellipse  
   pupilEllipse = fit_ellipse(x,y);
@@ -162,7 +199,14 @@ for k = 1:numel(n)
 % 
 %     
 %     hold off
-%     end       
+%     end  
+
+
+% get filename and give NaN for when file was skipped due to no ellipse
+%filename_ell(k) = filename(k);
+
+% get edge
+%edgeArea_ell(k) = edgeArea(k);
 
 end
 toc
@@ -170,39 +214,39 @@ toc
 % %% Extract data tuples
 % % extract session date, session number, filename for x-axis, movie number (first number of filenr), frame
 % % number (rest of numbers in filenr), animal id
-filename = filename';
+%filename_ell = filename_ell';
 token = strtok(filename,'.');
 D = regexp(token, '_', 'split');
 D = vertcat(D{:});
+
+%filenr
+% ix = cellfun('isempty', filename_ell);
+% filename_ell(ix) = {'nan'};
+filenr_temp = D(:,5);
+G = sprintf('%s*', filenr_temp{:}); % change cell to double
+filenr = sscanf(G, '%f*');
+filenr = filenr';
+
 
 % session date and number
 session_date_temp = D(:,1);
 session_date = datetime(session_date_temp, 'InputFormat', 'ddMMyy', 'Format', 'yyyy-MM-dd');
 session_date = string(session_date); % as string
+session_date = char(session_date); % as char temporarily for DataJoint
+session_date = session_date';
 
 % E = sprintf('%s*', session_date_temp{:}); 
 % session_date = sscanf(E, '%f*'); %as double
 % 
-% %session_date = char(session_date); % as char
-
-
 
 % Just creating a column with strings to see whether it works
-%session_date = repmat('010316', numel(session_date_temp), 1);
-
-
-
+%session_date = repmat('2016-05-15', numel(session_date_temp), 1);
 
 
 session_number_temp = D(:,3);
 F = sprintf('%s*', session_number_temp{:}); % change cell to double
 session_number = sscanf(F, '%f*');
 
-%filenr
-filenr_temp = D(:,5);
-G = sprintf('%s*', filenr_temp{:}); % change cell to double
-filenr = sscanf(G, '%f*');
-filenr = filenr';
 
 % movie number and frame number
 for m = 1:numel(filenr)
@@ -252,11 +296,24 @@ legend('longAxis');
 hold off
 
 %% Collect data
-% 
-% % collect data
-% data = [filenr; edgeArea; shortAxis; longAxis]; % as the eye and face of the animal is curved, it is better to take the longAxis as
-% % a diameter and compare this across time
-% data = data';
+
+% collect data
+data = [filenr; edgeArea; shortAxis; longAxis]; % as the eye and face of the animal is curved, it is better to take the longAxis as
+% a diameter and compare this across time
+data(data == 0) = NaN;
+data = data';
+fname = sprintf('pupilAxis_Mouse%d.mat', animal_id(1:1));
+save(fname, 'data');
+
+[row, col] = find(isnan(data));
+nrNaN = unique(row);
+
+% find files where edge detection didn't work
+[~, error_edge_col] = find(~cellfun('isempty', error_edge));
+error_edge_filenr = error_edge(error_edge_col)';
+
+
+
 
 % % Error upon analyzing whole dataset
 % Error using vertcat
