@@ -2,6 +2,7 @@
 % README
 %
 % author: Jantine Broek
+% e-mail: jantine.broek@yale.edu
 % date: May 2017
 % for: McCormick lab, Yale University, New Haven, USA
 %
@@ -26,20 +27,19 @@
 %
 %
 % Input:    
-%           .JPEG - these are files of individual pupil images obtained with Spike2 software (ask
-%                   Garrett)
+%           .JPEG - these are files of individual pupil images obtained with Virtual Dub 
+%                   software (http://www.virtualdub.org/download.html)             
 %
 %
 % Output:   
 %           longAxis   - size of the long axis of the ellipse
 %           shortAxis  - size of the short axis of the ellipse
+%           pupilXY    - pupil location
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-% Load data
-cd /home/jantine/newnas/Garrett/'Pupil Videos'/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set
-yourFolder = '/home/jantine/newnas/Garrett/Pupil Videos/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set';
+%% Load data
+cd /home/jantine/newnas/Garrett/'Pupil Videos'/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/2
+yourFolder = '/home/jantine/newnas/Garrett/Pupil Videos/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/2';
 % cd /Volumes/'Seagate Backup Plus Drive'/Pupil_Garrett/set
 % yourFolder = '/Volumes/Seagate Backup Plus Drive/Pupil_Garrett/set';
 addpath(yourFolder);
@@ -55,6 +55,12 @@ filename = cell(1,numel(n));
 for j = 1:numel(n)
   filename(j) = {contents(j).name};
   I = imread(filename{j});
+  
+  % display loop progression
+  if mod(j,1000)==0
+      disp([num2str(j) ' / ' num2str(size(n)) ' image ']);
+  end
+  
 end
 
 %% Select eye ROI
@@ -120,7 +126,7 @@ for k = 1:numel(n)
   
   
   % display loop progression
-  if mod(k,1000)==0
+  if mod(k,500)==0
       disp([num2str(k) ' / ' num2str(size(n)) ' image ']);
   end
 
@@ -264,8 +270,7 @@ for k = 1:numel(n)
 end
 toc
 
-
-%% Extract data tuples
+%% Extract data tuples for DataJoint
 % extract session date, session number, filename for x-axis, movie number (first number of filenr), frame
 % number (rest of numbers in filenr), animal id
 token = strtok(filename,'.');
@@ -305,7 +310,6 @@ animal_id_temp = sprintf('%s*', animal_id_temp{:});
 animal_id = regexp(animal_id_temp, '\d*', 'Match');
 animal_id = str2double(animal_id');
 
-
 %% Plot axis
 figure;
 hold on
@@ -330,8 +334,6 @@ legend('longAxis');
 hold off
 
 %% Collect data
-
-% collect data
 data = [filenr; shortAxis; longAxis; pupilXY]; 
 data(data == 0) = NaN;
 data = data';
@@ -340,9 +342,201 @@ data = data';
 fname = sprintf('pupilAxis_Mouse%d.mat', animal_id(1:1));
 save(fname, 'data');
 
-% find nan
+% find NaN
 [row, col] = find(isnan(data));
 nrNaN = unique(row);
+dataNaN = data(nrNaN,:); % all is NaN
+% check NaN images
+filename_NaN = filename(:,nrNaN)';
+figure; 
+for ii = 1:numel(filename_NaN)
+   INaN = imread(filename_NaN{ii});
+   imshow(filename_NaN{ii})
+   pause;
+end
+
+
+%% Outlier removal
+
+% compute the mean value
+shortAxis_mean = nanmean(shortAxis);
+longAxis_mean = nanmean(longAxis);
+pupilXY_mean = nanmean(pupilXY,2);
+
+% compute the absolute difference
+shortAxis_absdiff = abs(shortAxis - shortAxis_mean);
+longAxis_absdiff = abs(longAxis - longAxis_mean);
+pupilXY_absdiff = abs(pupilXY - pupilXY_mean);
+
+% compute the median of the absolute difference
+shortAxis_mad = median(shortAxis_absdiff);
+longAxis_mad = median(longAxis_absdiff);
+pupilXY_mad = median(pupilXY_absdiff);
+
+% outliers if the absolute difference is moe than some factor times the mad
+% value
+% shortAxis
+sensitivityFactor = 4; %change this value for more critical detection
+thresholdValue_sA = sensitivityFactor * shortAxis_mad;
+outlierIndexes_sA = abs(shortAxis_absdiff) > thresholdValue_sA;
+% longAxis
+thresholdValue_lA = sensitivityFactor * longAxis_mad;
+outlierIndexes_lA = abs(longAxis_absdiff) > thresholdValue_lA;
+% pupilXY
+thresholdValue_XY = sensitivityFactor * pupilXY_mad;
+outlierIndexes_XY = abs(pupilXY_absdiff) > thresholdValue_XY;
+
+% extract outlier values
+shortAxis_outliers = shortAxis(outlierIndexes_sA);
+longAxis_outliers = longAxis(outlierIndexes_lA);
+pupilXY_outliers = pupilXY(outlierIndexes_XY);
+
+% % extract non-outlier values
+% shortAxis_nonoutliers = shortAxis(~outlierIndexes_sA);
+% longAxis_nonoutliers = longAxis(~outlierIndexes_lA);
+% pupilXY_nonoutliers = pupilXY(~outlierIndexes_XY);
+
+% remove outliers from original dataset and replace with NaN
+shortAxis(outlierIndexes_sA) = nan;
+longAxis(outlierIndexes_lA) = nan;
+%pupilXY(outlierIndexes_XY) = nan;
+
+%% Interpolate NaN values
+shortAxis_inter = inpaintn(shortAxis);
+longAxis_inter = inpaintn(longAxis);
+
+% plot axis with interpolated values
+figure;
+plot(data(:,3), '-or')
+hold on
+plot(longAxis_inter, '-og')
+xticks(1:1:numel(filenr));
+set(gca,'XTickLabel',filenr)
+xtickangle(45)
+xlabel('filenr');
+ylabel('length axis (px)');
+title('Original and interpolated pupil long axis')
+legend('Original', 'LP filtered');
+hold off
+
+
+%% TO DO
+% check pupilXY outliers
+
+
+
+
+
+
+%% Interpolate missing values
+data_inter = data;
+data_inter = inpaintn(data_inter);
+% check that NaN are interpolated
+% [row1, ~] = find(isnan(data_inter));
+data_inter_ex = data_inter(nrNaN,:);
+shortAxis_NaN = data_inter(:,2);
+longAxis_NaN = data_inter(:,3);
+
+
+% data_inter2 = repnan(data_inter2);
+% % check that NaN are interpolated
+% % [row1, ~] = find(isnan(data_inter));
+% data_inter2_ex = data_inter2(nrNaN,:);
+
+
+% calculate mean pupil position and delta position over time
+pupilXY_inter(1,:) = inpaintn(pupilXY(1,:));
+pupilXY_inter(2,:) = inpaintn(pupilXY(2,:));
+pupilXY_mean = nanmean(pupilXY_inter,2);
+
+% difference of interpolated NaNs with mean (delta)
+pupilXYDel = nan(1,length(pupilXY_inter));
+for ij = 1:length(pupilXY_inter)
+    if ~isnan(pupilXY_inter(1,ij)) 
+        ydel = pupilXY_mean(1) - pupilXY_inter(1,ij);
+        xdel = pupilXY_mean(2) - pupilXY_inter(2,ij);
+        pupilXYDel(ij) = sqrt(ydel^2 + xdel^2);
+    end
+end
+
+
+% locate average pupil center location
+figure;
+imshow(mean(I,3),[0 255])
+hold on
+scatter(pupilXY_mean(1),pupilXY_mean(2));
+hold off
+
+figure;
+plot(pupilXYDel+40,'Linewidth',2);
+title('Pupil Diameter and Eye Position');
+xlabel('Time (1/10 sec)');
+ylabel('Pupil Diameter (pixels)');
+legend('Eye position');
+
+% plot axis with interpolated values
+figure;
+plot(longAxis, '-or')
+hold on
+plot(longAxis_NaN2, '-og')
+xticks(1:1:numel(filenr));
+set(gca,'XTickLabel',filenr)
+xtickangle(45)
+xlabel('filenr');
+ylabel('length axis (px)');
+title('Original and interpolated pupil long axis')
+legend('Original', 'LP filtered');
+hold off
+
+
+
+% calculate mean pupil position and delta position over time
+pupilXY_mean = nanmean(pupilXY_inter,2);
+
+%delta position over time
+pupilXYDel = nan(1,length(pupilXY_inter));
+for ij=1:length(pupilXY_inter)
+    if ~isnan(pupilXY_inter(1,ij)) %avoid using values we deleted manually
+        ydel = pupilXY_mean(1) - pupilXY_inter(1,ij);
+        xdel = pupilXY_mean(2) - pupilXY_inter(2,ij);
+        pupilXYDel(ij) = sqrt(ydel^2 + xdel^2);
+    end
+end
+
+% imshow(mean(video,3),[0 255])
+% hold on
+% scatter(pupilXY_mean(1),pupilXY_mean(2));
+% hold off
+% 
+% figure
+% plot(pupilD_inter,'Linewidth',2);
+% hold on
+% plot(pupilXYDel+40,'Linewidth',2);
+% hold off
+% title('Pupil Diameter and Eye Position');
+% xlabel('Time (1/10 sec)');
+% ylabel('Pupil Diamter (pixels)');
+% legend('Pupil diameter','Eye position');
+
+% Low-pass filter pupil trace
+%frequency cuttoff for low-pass filter
+freqCutoff = 4;
+sampleInterval = mode(diff(videoTS));
+[b,a]=besself(4,2*pi*freqCutoff);
+[bd,ad] = bilinear(b,a,1/sampleInterval);
+pupilD_smooth = filtfilt(bd,ad,pupilD_inter-mean(pupilD_inter));
+pupilD_smooth = pupilD_smooth + mean(pupilD_inter);
+
+figure
+plot(pupilD,'Linewidth',2)
+hold on
+plot(pupilD_smooth,'r','Linewidth',2)
+title('Original and filtered pupil diameter measurements')
+legend('Original', 'LP filtered');
+hold off
+
+correlogram = xcorr(pupilD_smooth,pupilD_inter,50,'coeff');
+%plot(-50:1:50,correlogram)
 
 
 %% Add to DataJoint
