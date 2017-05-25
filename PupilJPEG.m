@@ -506,55 +506,55 @@ save(fname, 'data_inter');
 
 %% Add to DataJoint
 
-addpath /media/jantine/Data/04_DataJoint/2PE/schemas
-
-
-% % collect data for schema preprocess.EyeROI - structure of arrays
-% tuple.animal_id = animal_id;
-% tuple.session_date = session_date; 
-% %tuple.session_date = num2cell(tuple.session_date);
-% tuple.session_date = arrayfun(@char, tuple.session_date, 'uni', false);
-% tuple.session_number = session_number;
-% tuple.movie_number = movie_number';
-% tuple.frame_number = frame_number';
-% tuple.short_axis = shortAxis';
-% tuple.long_axis = longAxis';
-% tuple.pupil_x = pupilX';
-% tuple.pupil_y = pupilY';
+% addpath /media/jantine/Data/04_DataJoint/2PE/schemas
+% 
+% 
+% % % collect data for schema preprocess.EyeROI - structure of arrays
+% % tuple.animal_id = animal_id;
+% % tuple.session_date = session_date; 
+% % %tuple.session_date = num2cell(tuple.session_date);
+% % tuple.session_date = arrayfun(@char, tuple.session_date, 'uni', false);
+% % tuple.session_number = session_number;
+% % tuple.movie_number = movie_number';
+% % tuple.frame_number = frame_number';
+% % tuple.short_axis = shortAxis';
+% % tuple.long_axis = longAxis';
+% % tuple.pupil_x = pupilX';
+% % tuple.pupil_y = pupilY';
+% % 
+% % % order structure as DataJoint keys
+% % a = preprocess.EyeROI;
+% % fields = a.header.names;
+% % tuple = orderfields(tuple, fields);
+% % %tuple = dj.struct.fromFields(tuple);
+% % 
+% % insert(preprocess.EyeROI, tuple)
+% 
+% 
+% movie_number = movie_number';
+% frame_number = frame_number';
+% shortAxis = shortAxis';
+% longAxis = longAxis';
+% pupilX = pupilX';
+% pupilY = pupilY';
+% 
+% % collect data for schema preprocess.EyeROI - array of structures
+% tuple(:).animal_id = animal_id(:);
+% tuple(:).session_date = session_date(:);
+% tuple(:).session_number = session_number(:);
+% tuple(:).movie_number = movie_number(:);
+% tuple(:).frame_number = frame_number(:);
+% tuple(:).short_axis = shortAxis(:);
+% tuple(:).long_axis = longAxis(:);
+% tuple(:).pupil_x = pupilX(:);
+% tuple(:).pupil_y = pupilY(:);
 % 
 % % order structure as DataJoint keys
 % a = preprocess.EyeROI;
 % fields = a.header.names;
 % tuple = orderfields(tuple, fields);
-% %tuple = dj.struct.fromFields(tuple);
 % 
 % insert(preprocess.EyeROI, tuple)
-
-
-movie_number = movie_number';
-frame_number = frame_number';
-shortAxis = shortAxis';
-longAxis = longAxis';
-pupilX = pupilX';
-pupilY = pupilY';
-
-% collect data for schema preprocess.EyeROI - array of structures
-tuple(:).animal_id = animal_id(:);
-tuple(:).session_date = session_date(:);
-tuple(:).session_number = session_number(:);
-tuple(:).movie_number = movie_number(:);
-tuple(:).frame_number = frame_number(:);
-tuple(:).short_axis = shortAxis(:);
-tuple(:).long_axis = longAxis(:);
-tuple(:).pupil_x = pupilX(:);
-tuple(:).pupil_y = pupilY(:);
-
-% order structure as DataJoint keys
-a = preprocess.EyeROI;
-fields = a.header.names;
-tuple = orderfields(tuple, fields);
-
-insert(preprocess.EyeROI, tuple)
 
 
 
