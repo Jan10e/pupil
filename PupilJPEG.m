@@ -44,8 +44,8 @@
 %           (1) Using edge detection, the pupil is found and the 
 %           coordinates of the pupil location will be used to estimate the 
 %           function for (2) ellipse fitting. With the formula for ellipse 
-%           fitting, the (3) regionprops will be used to compare the 
-%           dynamics of the pupil fluctuation.
+%           fitting, the (3) pupil axis and location parameter are extracted
+%           and will be used to compare the dynamics of the pupil fluctuation.
 %
 %
 % Input:
@@ -334,7 +334,7 @@ animal_id_temp = animal_id_temp(:,1);
 animal_id_temp = sprintf('%s*', animal_id_temp{:});
 animal_id = regexp(animal_id_temp, '\d*', 'Match');
 animal_id = str2double(animal_id');
-animal_id = uint16(animal_id); %change to uint16
+%animal_id = uint16(animal_id); %change to uint16
 
 
 %% Plot axis
@@ -506,55 +506,32 @@ save(fname, 'data_inter');
 
 %% Add to DataJoint
 
-% addpath /media/jantine/Data/04_DataJoint/2PE/schemas
-% 
-% 
-% % % collect data for schema preprocess.EyeROI - structure of arrays
-% % tuple.animal_id = animal_id;
-% % tuple.session_date = session_date; 
-% % %tuple.session_date = num2cell(tuple.session_date);
-% % tuple.session_date = arrayfun(@char, tuple.session_date, 'uni', false);
-% % tuple.session_number = session_number;
-% % tuple.movie_number = movie_number';
-% % tuple.frame_number = frame_number';
-% % tuple.short_axis = shortAxis';
-% % tuple.long_axis = longAxis';
-% % tuple.pupil_x = pupilX';
-% % tuple.pupil_y = pupilY';
-% % 
-% % % order structure as DataJoint keys
-% % a = preprocess.EyeROI;
-% % fields = a.header.names;
-% % tuple = orderfields(tuple, fields);
-% % %tuple = dj.struct.fromFields(tuple);
-% % 
-% % insert(preprocess.EyeROI, tuple)
-% 
-% 
-% movie_number = movie_number';
-% frame_number = frame_number';
-% shortAxis = shortAxis';
-% longAxis = longAxis';
-% pupilX = pupilX';
-% pupilY = pupilY';
-% 
-% % collect data for schema preprocess.EyeROI - array of structures
-% tuple(:).animal_id = animal_id(:);
-% tuple(:).session_date = session_date(:);
-% tuple(:).session_number = session_number(:);
-% tuple(:).movie_number = movie_number(:);
-% tuple(:).frame_number = frame_number(:);
-% tuple(:).short_axis = shortAxis(:);
-% tuple(:).long_axis = longAxis(:);
-% tuple(:).pupil_x = pupilX(:);
-% tuple(:).pupil_y = pupilY(:);
-% 
-% % order structure as DataJoint keys
-% a = preprocess.EyeROI;
-% fields = a.header.names;
-% tuple = orderfields(tuple, fields);
-% 
-% insert(preprocess.EyeROI, tuple)
+addpath /media/jantine/Data/04_DataJoint/2PE/schemas
+
+
+animal_id = num2cell(animal_id);
+%session_date = num2cell(session_date);
+session_date = arrayfun(@char, session_date, 'uni', false);
+session_number = num2cell(session_number);
+movie_number = num2cell(movie_number');
+frame_number = num2cell(frame_number');
+short_axis = num2cell(shortAxis_inter');
+long_axis = num2cell(longAxis_inter');
+pupilXY_inter = pupilXY_inter';
+pupil_x = num2cell(pupilXY_inter(:,1));
+pupil_y = num2cell(pupilXY_inter(:,2));
+
+tuple = horzcat(animal_id, session_date, session_number, movie_number, frame_number, short_axis, long_axis, pupil_x, pupil_y);
+
+
+% order structure as DataJoint keys
+a = preprocess.EyeROI;
+fields = a.header.names;
+fields = fields(1:end-1);
+tuple = cell2struct(tuple, fields, 2);
+
+
+a.insert(tuple)
 
 
 
