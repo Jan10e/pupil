@@ -22,6 +22,24 @@
 %            inpaintn     - from https://www.mathworks.com/matlabcentral/fileexchange/27994-inpaint-over-missing-data-in-1-d--2-d--3-d--n-d-arrays
 %                           To interpolate removed outliers
 %
+%
+% Experimental set-up:
+%            mice         - The mice are head-fixed and run on a wheel
+%                           while recordings are taken.
+%
+%            camera       - Frame rate of the camera is 30Hz.
+%
+%            calibration  - An image of a ruler is taken with the camera in
+%                           order to know the mm/pixel conversion. 
+%
+%            normalization- For every session, pupil measurements are normalized
+%                           to the frame when the pupil is maximally
+%                           dilated, which is always when the mouse is
+%                           running. Pupil size = 1 correspond to its
+%                           maximaly dilated state.
+%
+%            eye movement - This is minimal in head-fixed mice. 
+%
 % Goal:
 %           (1) Using edge detection, the pupil is found and the 
 %           coordinates of the pupil location will be used to estimate the 
@@ -35,6 +53,7 @@
 %                   with Virtual Dub software: 
 %                   http://www.virtualdub.org/download.html.
 %                   A sesion folder contains 10,000 frames, which is ~400MB
+%                   Frame rate of the camera is 30Hz
 %
 %
 % Manual input:
@@ -50,8 +69,8 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load data
-cd /home/jantine/newnas/Garrett/'Pupil Videos'/010917/Mouse686/1/010917_Mouse686_1_CompressedROIs/010917_Mouse686_1_Eyes/010917_EyeFrames/0
-yourFolder = '/home/jantine/newnas/Garrett/Pupil Videos/010917/Mouse686/1/010917_Mouse686_1_CompressedROIs/010917_Mouse686_1_Eyes/010917_EyeFrames/0';
+cd /home/jantine/newnas/Garrett/'Pupil Videos'/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set
+yourFolder = '/home/jantine/newnas/Garrett/Pupil Videos/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set';
 addpath(yourFolder);
 
 % place files in natural order
@@ -273,7 +292,7 @@ for k = 1:numel(n)
 end
 toc
 
-%% Extract data tuples for DataJoint
+%% Extract tuple variables for DataJoint
 % extract session date, session number, filename for x-axis, movie number (first number of filenr), frame
 % number (rest of numbers in filenr), animal id
 token = strtok(filename,'.');
@@ -286,12 +305,13 @@ G = sprintf('%s*', filenr_temp{:}); % change cell to double
 filenr = sscanf(G, '%f*');
 filenr = filenr';
 
-% session date
+% session date: should be in string format "2017-05-12"
 session_date_temp = D(:,1);
 session_date = datetime(session_date_temp, 'InputFormat', 'ddMMyy', 'Format', 'yyyy-MM-dd');
 session_date = string(session_date); % as string
-session_date = char(session_date); % as char temporarily for DataJoint
-session_date = session_date';
+%session_date = num2cell(session_date);
+%session_date = char(session_date); % as char temporarily for DataJoint
+%session_date = session_date';
 
 % session number
 session_number_temp = D(:,3);
@@ -314,6 +334,7 @@ animal_id_temp = animal_id_temp(:,1);
 animal_id_temp = sprintf('%s*', animal_id_temp{:});
 animal_id = regexp(animal_id_temp, '\d*', 'Match');
 animal_id = str2double(animal_id');
+animal_id = uint16(animal_id); %change to uint16
 
 
 %% Plot axis
@@ -346,10 +367,6 @@ hold off
 data = [filenr; shortAxis; longAxis; pupilXY];
 data(data == 0) = NaN;
 data = data';
-
-% save data
-fname = sprintf('dataRaw_Mouse%d.mat', animal_id(1:1));
-save(fname, 'data');
 
 % find NaN
 [row, col] = find(isnan(data));
@@ -469,32 +486,85 @@ legend('Original', 'Outlier removal');
 hold off
 
 
-%% Collect interpolated data
+%% Collect data
+
+% store data with headers
+coldata = {'Filenr', 'shortAxis', 'longAxis', 'Pupil_x', 'Pupil_y'};
+data = array2table(data, 'VariableNames', coldata);
 
 data_inter = [filenr; shortAxis_inter; longAxis_inter; pupilXY_inter]';
+data_inter = array2table(data_inter, 'VariableNames', coldata);
 
-% save data
+% save raw data
+fname = sprintf('dataRaw_Mouse%d.mat', animal_id(1:1));
+save(fname, 'data');
+
+% save interpolated data
 fname = sprintf('dataInter_Mouse%d.mat', animal_id(1:1));
 save(fname, 'data_inter');
 
 
 %% Add to DataJoint
 
-% addpath /media/jantine/Data/04_DataJoint/2PE/schemas
-%
-% % collect data for schema preprocess.EyeROI
+addpath /media/jantine/Data/04_DataJoint/2PE/schemas
+
+
+% % collect data for schema preprocess.EyeROI - structure of arrays
 % tuple.animal_id = animal_id;
-% tuple.session_date = session_date; % should be in string format "2017-05-12"
+% tuple.session_date = session_date; 
+% %tuple.session_date = num2cell(tuple.session_date);
+% tuple.session_date = arrayfun(@char, tuple.session_date, 'uni', false);
 % tuple.session_number = session_number;
 % tuple.movie_number = movie_number';
 % tuple.frame_number = frame_number';
-% tuple.edge_area = edgeArea';
 % tuple.short_axis = shortAxis';
 % tuple.long_axis = longAxis';
-%
+% tuple.pupil_x = pupilX';
+% tuple.pupil_y = pupilY';
+% 
 % % order structure as DataJoint keys
 % a = preprocess.EyeROI;
 % fields = a.header.names;
 % tuple = orderfields(tuple, fields);
-%
-% insert(preprocess.EyeROI, dj.struct.fromFields(tuple))
+% %tuple = dj.struct.fromFields(tuple);
+% 
+% insert(preprocess.EyeROI, tuple)
+
+
+movie_number = movie_number';
+frame_number = frame_number';
+shortAxis = shortAxis';
+longAxis = longAxis';
+pupilX = pupilX';
+pupilY = pupilY';
+
+% collect data for schema preprocess.EyeROI - array of structures
+tuple(:).animal_id = animal_id(:);
+tuple(:).session_date = session_date(:);
+tuple(:).session_number = session_number(:);
+tuple(:).movie_number = movie_number(:);
+tuple(:).frame_number = frame_number(:);
+tuple(:).short_axis = shortAxis(:);
+tuple(:).long_axis = longAxis(:);
+tuple(:).pupil_x = pupilX(:);
+tuple(:).pupil_y = pupilY(:);
+
+% order structure as DataJoint keys
+a = preprocess.EyeROI;
+fields = a.header.names;
+tuple = orderfields(tuple, fields);
+
+insert(preprocess.EyeROI, tuple)
+
+
+
+
+
+
+
+
+
+
+
+
+
