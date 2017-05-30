@@ -136,7 +136,6 @@ filename = cell(1,numel(n));
 shortAxis = zeros(1, numel(n));
 longAxis = zeros(1, numel(n));
 pupilXY = zeros(1, numel(n));
-% error_fit = zeros(1, numel(n));
 
 tic
 for k = 1:numel(n)
@@ -309,9 +308,7 @@ filenr = filenr';
 session_date_temp = D(:,1);
 session_date = datetime(session_date_temp, 'InputFormat', 'ddMMyy', 'Format', 'yyyy-MM-dd');
 session_date = string(session_date); % as string
-%session_date = num2cell(session_date);
-%session_date = char(session_date); % as char temporarily for DataJoint
-%session_date = session_date';
+
 
 % session number
 session_number_temp = D(:,3);
@@ -334,7 +331,6 @@ animal_id_temp = animal_id_temp(:,1);
 animal_id_temp = sprintf('%s*', animal_id_temp{:});
 animal_id = regexp(animal_id_temp, '\d*', 'Match');
 animal_id = str2double(animal_id');
-%animal_id = uint16(animal_id); %change to uint16
 
 
 %% Plot axis
@@ -440,6 +436,8 @@ shortAxis_inter = inpaintn(shortAxis);
 longAxis_inter = inpaintn(longAxis);
 pupilX_inter = inpaintn(pupilX);
 pupilY_inter = inpaintn(pupilY);
+
+pupilXY_inter = zeros(2, numel(n)); 
 pupilXY_inter(1,:) = pupilX_inter;
 pupilXY_inter(2,:) = pupilY_inter;
 
@@ -525,7 +523,7 @@ tuple = horzcat(animal_id, session_date, session_number, movie_number, frame_num
 
 
 % order structure as DataJoint keys
-a = preprocess.EyeROI;
+a = pupil.EyeROI;
 fields = a.header.names;
 fields = fields(1:end-1);
 tuple = cell2struct(tuple, fields, 2);
