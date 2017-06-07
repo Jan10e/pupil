@@ -69,8 +69,8 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load data
-cd /home/jantine/newnas/Garrett/'Pupil Videos'/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set
-yourFolder = '/home/jantine/newnas/Garrett/Pupil Videos/010316/Mouse882/1/010316_Mouse882_1_CompressedROIs/010316_Mouse882_1_Eyes/010316_EyeFrames/set';
+cd /home/jantine/newnas/Garrett/'Pupil Videos'/011217/Mouse686/4/011217_Mouse686_4_CompressedROIs/011217_Mouse686_4_Eyes/011217_EyeFrames/2
+yourFolder = '/home/jantine/newnas/Garrett/Pupil Videos/011217/Mouse686/4/011217_Mouse686_4_CompressedROIs/011217_Mouse686_4_Eyes/011217_EyeFrames/2';
 addpath(yourFolder);
 
 % place files in natural order
@@ -94,7 +94,7 @@ close all
 
 %% Choose threshold for pupil value
 
-% threshold
+% threshold (default is 25)
 threshDark = 25;
 
 % check threshold value
@@ -307,6 +307,7 @@ filenr = filenr';
 % session date: should be in string format "2017-05-12"
 session_date_temp = D(:,1);
 session_date = datetime(session_date_temp, 'InputFormat', 'ddMMyy', 'Format', 'yyyy-MM-dd');
+%session_date = datetime(session_date_temp, 'InputFormat', 'MMddyy', 'Format', 'yyyy-MM-dd');
 session_date = string(session_date); % as string
 
 
